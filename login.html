@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CycleTrack - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-bg: #1e2338;
+            --secondary-bg: #2c3151;
+            --text-color: white;
+            --input-bg: #3d4266;
+            --accent-color: #ff69b4;
+            --border-radius: 10px;
+        }
+        
+        body.light-theme {
+            --primary-bg: #f9f5f8;
+            --secondary-bg: #ffffff;
+            --text-color: #333333;
+            --input-bg: #f0f0f0;
+        }
+        
+        body {
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .login-container {
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .form-container {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .tab-container {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #4a5073;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 18px;
+            flex-grow: 1;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: var(--accent-color);
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background-color: var(--accent-color);
+        }
+        
+        .form-content {
+            display: none;
+            min-height: 350px; /* Set minimum height for both forms */
+        }
+        
+        .form-content.active {
+            display: block;
+        }
+        
+        .form-content input {
+            margin-bottom: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            display: block;
+        }
+        
+        input {
+            margin-bottom: 15px;
+            padding: 15px;
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 16px;
+        }
+        
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: var(--border-radius);
+            background-color: var(--accent-color);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #e6598d;
+            transform: translateY(-2px);
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            font-size: 32px;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+        
+        .logo span {
+            color: var(--accent-color);
+        }
+        
+        .login-status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .demo-login-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .demo-credentials {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .home-link {
+            color: var(--text-color);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .home-link:hover {
+            color: var(--accent-color);
+        }
+        
+        /* Theme Toggle Button - updated positioning */
+        .theme-toggle-btn {
+            position: relative;
+            background: transparent;
+            color: var(--text-color);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 18px;
+            cursor: pointer;
+            overflow: hidden;
+            margin-left: 15px;
+        }
+        
+        /* Position container for nav elements */
+        .nav-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .theme-toggle-btn .dark-icon,
+        .theme-toggle-btn .light-icon {
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+        
+        .light-icon {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .dark-icon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* When light theme is active */
+        body.light-theme .light-icon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        body.light-theme .dark-icon {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        body.light-theme .demo-login-container {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-theme .demo-credentials {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        body.light-theme .tab-container {
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .login-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .remember-me {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        
+        .remember-me input[type="checkbox"] {
+            margin: 0;
+            margin-right: 5px;
+        }
+        
+        .forgot-password {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-container">
+        <a href="index.html" class="home-link">
+            <i class="fas fa-arrow-left"></i>&nbsp;Back to Home
+        </a>
+    </div>
+    
+    <div class="login-container">
+        <div class="logo">
+            <h1>Cycle<span>Track</span></h1>
+            <p>Your personal period tracking companion</p>
+        </div>
+        
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab('login')">Login</div>
+            <div class="tab" onclick="switchTab('signup')">Sign Up</div>
+        </div>
+        
+        <div class="form-container">
+            <div id="login-form" class="form-content active">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <div class="login-options">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me">Remember me</label>
+                    </div>
+                    <a href="#" class="forgot-password" onclick="handleForgotPassword(); return false;">Forgot password?</a>
+                </div>
+                <div id="login-status" class="login-status"></div>
+                <button onclick="handleLogin()">Login</button>
+                
+                <div class="demo-login-container">
+                    <p>Having trouble? Use our demo account:</p>
+                    <button type="button" class="demo-login-btn" onclick="loginWithDemo()">Demo Account</button>
+                </div>
+            </div>
+            
+            <div id="signup-form" class="form-content">
+                <input type="text" id="signup-name" placeholder="Full Name" required>
+                <input type="number" id="signup-age" placeholder="Age" min="13" max="65" required>
+                <input type="email" id="signup-email" placeholder="Email" required>
+                <input type="password" id="signup-password" placeholder="Password" required>
+                <div id="signup-status" class="login-status"></div>
+                <button onclick="handleSignup()">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set light theme by default
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+        });
+        
+        // Function to initialize site theme based on saved preference
+        function initializeSiteTheme() {
+            const savedTheme = localStorage.getItem('siteTheme') || 'dark';
+            
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            }
+            
+            console.log('Site theme initialized to:', savedTheme);
+        }
+        
+        // Function to toggle between light and dark theme
+        function toggleSiteTheme() {
+            const body = document.body;
+            const currentTheme = localStorage.getItem('siteTheme') || 'dark';
+            
+            // Toggle theme
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            // Apply theme class to body
+            if (newTheme === 'light') {
+                body.classList.add('light-theme');
+            } else {
+                body.classList.remove('light-theme');
+            }
+            
+            // Save theme preference
+            localStorage.setItem('siteTheme', newTheme);
+            console.log('Site theme switched to:', newTheme);
+        }
+        
+        // Switch between login and signup tabs
+        function switchTab(tab) {
+            // Hide all tabs and remove active class
+            document.querySelectorAll('.tab').forEach(element => {
+                element.classList.remove('active');
+            });
+            
+            document.querySelectorAll('.form-content').forEach(element => {
+                element.classList.remove('active');
+            });
+            
+            // Show the selected tab
+            if (tab === 'login') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('login-form').classList.add('active');
+            } else if (tab === 'signup') {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('signup-form').classList.add('active');
+            }
+        }
+        
+        // Handle login submission
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const loginStatus = document.getElementById('login-status');
+            const rememberMe = document.getElementById('remember-me').checked;
+            
+            if (!email || !password) {
+                showStatus(loginStatus, 'Please enter both email and password', 'error');
+                return;
+            }
+            
+            showStatus(loginStatus, 'Logging in...', 'info');
+            
+            // Send login request to the server
+            fetch('http://localhost:8080/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Login failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                showStatus(loginStatus, 'Login successful! Redirecting...', 'success');
+                
+                // Save token and user data to localStorage
+                localStorage.setItem('token', data.token);
+                if (data.user) {
+                    localStorage.setItem('userName', data.user.name);
+                    localStorage.setItem('userEmail', data.user.email);
+                    localStorage.setItem('userAge', data.user.age || '');
+                    localStorage.setItem('userId', data.user.id);
+                }
+                
+                // If remember me is checked, save email (but not password for security)
+                if (rememberMe) {
+                    localStorage.setItem('rememberedEmail', email);
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                }
+                
+                // Redirect to main app page
+                setTimeout(() => {
+                    console.log('Redirecting to main app page...');
+                    window.location.href = 'new_index.html';
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                showStatus(loginStatus, 'Error: ' + error.message, 'error');
+            });
+        }
+        
+        // Handle signup submission
+        function handleSignup() {
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const age = document.getElementById('signup-age').value;
+            const signupStatus = document.getElementById('signup-status');
+            
+            if (!name || !email || !password) {
+                showStatus(signupStatus, 'Please fill in all required fields', 'error');
+                return;
+            }
+            
+            showStatus(signupStatus, 'Creating account...', 'info');
+            
+            // Send signup request to the server
+            fetch('http://localhost:8080/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, email, password, age })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Signup failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                showStatus(signupStatus, 'Account created successfully!', 'success');
+                
+                // Save token and user data to localStorage
+                localStorage.setItem('token', data.token);
+                if (data.user) {
+                    localStorage.setItem('userName', data.user.name);
+                    localStorage.setItem('userEmail', data.user.email);
+                    localStorage.setItem('userAge', data.user.age || '');
+                    localStorage.setItem('userId', data.user.id);
+                    
+                    // Redirect directly to the dashboard after successful signup
+                    setTimeout(() => {
+                        window.location.href = 'new_index.html';
+                    }, 1500);
+                } else {
+                    // If no user data, switch to login tab after successful signup
+                    setTimeout(() => {
+                        switchTab('login');
+                        document.getElementById('login-email').value = email;
+                    }, 1500);
+                }
+            })
+            .catch(error => {
+                console.error('Signup error:', error);
+                showStatus(signupStatus, 'Error: ' + error.message, 'error');
+            });
+        }
+        
+        // Helper to show status messages
+        function showStatus(element, message, type) {
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            // Remove all classes
+            element.className = 'login-status';
+            
+            // Add the appropriate class
+            if (type) {
+                element.classList.add(type);
+            }
+        }
+        
+        // Login with demo account
+        function loginWithDemo() {
+            document.getElementById('login-email').value = 'olivia@gmail.com';
+            document.getElementById('login-password').value = 'password123';
+            
+            // Show status and wait briefly
+            showStatus(document.getElementById('login-status'), 'Using demo account...', 'info');
+            
+            // Submit login after a short delay
+            setTimeout(handleLogin, 500);
+        }
+        
+        // Check if we're already logged in and handle remembered email
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Already logged in, redirect to main app
+                window.location.href = 'new_index.html';
+            } else {
+                // Check if we have a remembered email
+                const rememberedEmail = localStorage.getItem('rememberedEmail');
+                if (rememberedEmail) {
+                    document.getElementById('login-email').value = rememberedEmail;
+                    document.getElementById('remember-me').checked = true;
+                }
+            }
+        });
+
+        // Add a logout helper function for consistency
+        function handleLogout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+
+        // Handle forgot password
+        function handleForgotPassword() {
+            const email = document.getElementById('login-email').value;
+            const loginStatus = document.getElementById('login-status');
+            
+            if (!email) {
+                showStatus(loginStatus, 'Please enter your email address first', 'error');
+                return;
+            }
+            
+            showStatus(loginStatus, 'Processing request...', 'info');
+            
+            fetch('http://localhost:8080/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showStatus(loginStatus, data.error, 'error');
+                } else {
+                    showStatus(loginStatus, 'If your email exists in our system, you will receive password reset instructions.', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showStatus(loginStatus, 'An error occurred. Please try again later.', 'error');
+            });
+        }
+    </script>
+</body>
+</html> 

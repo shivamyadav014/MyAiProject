@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CycleTrack - Period Tracking App</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --accent-color: var(--accent-pink);
+        }
+        /* Theme color for user messages in chatbot */
+        .user-message {
+            background-color: var(--accent-pink) !important;
+            color: var(--text-primary) !important;
+        }
+        /* Match chatbot header to theme */
+        .chatbot-header {
+            background-color: var(--accent-pink) !important;
+            color: var(--text-primary) !important;
+        }
+        /* Match send button to theme */
+        .chatbot-input button {
+            background-color: var(--accent-pink) !important;
+        }
+        .chatbot-input button:hover {
+            background-color: #ff4f8b !important;
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            position: relative;
+            background: transparent;
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 18px;
+            cursor: pointer;
+            overflow: hidden;
+            margin-left: 15px;
+            z-index: 100;
+        }
+        
+        body.light-theme .theme-toggle-btn {
+            border: 2px solid rgba(0, 0, 0, 0.2);
+        }
+        
+        .theme-toggle-btn .dark-icon,
+        .theme-toggle-btn .light-icon {
+            position: absolute;
+            transition: all 0.3s ease;
+        }
+        
+        .light-icon {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .dark-icon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* When light theme is active */
+        body.light-theme .light-icon {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        body.light-theme .dark-icon {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        
+        /* Theme switcher styles for blue theme option */
+        .theme-switcher {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-right: 10px;
+        }
+        
+        .theme-switcher span {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .theme-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+        
+        .theme-btn:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Active theme indicator */
+        .theme-btn.active {
+            box-shadow: 0 0 0 2px #333;
+        }
+        
+        /* Footer layout */
+        .chatbot-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-top: 1px solid #eee;
+        }
+        
+        /* Blue theme class for JavaScript switching */
+        body.blue-theme .user-message {
+            background-color: var(--accent-blue) !important;
+        }
+        
+        body.blue-theme .chatbot-header {
+            background-color: var(--accent-blue) !important;
+        }
+        
+        body.blue-theme .chatbot-input button {
+            background-color: var(--accent-blue) !important;
+        }
+        
+        body.blue-theme .chatbot-input button:hover {
+            background-color: #2a7bd2 !important;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        // Direct inline script for debugging
+        console.log('Page loading started');
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM content loaded from inline script');
+            
+            // Set light theme by default
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+            
+            // Initialize site theme
+            initializeSiteTheme();
+            
+            // Test modal functions directly
+            window.showPeriodModal = function() {
+                console.log('Direct modal show called');
+                const modal = document.getElementById('periodInputModal');
+                if (modal) {
+                    console.log('Modal found, setting display to flex');
+                    modal.style.display = 'flex';
+                } else {
+                    console.error('Period modal not found!');
+                }
+                return false;
+            };
+
+            // Add a demo login button
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                console.log('Adding demo login button');
+                const demoButton = document.createElement('button');
+                demoButton.type = 'button';
+                demoButton.className = 'demo-login-btn';
+                demoButton.textContent = 'Demo Account';
+                demoButton.onclick = function() {
+                    loginWithDemo();
+                    return false;
+                };
+                loginForm.appendChild(demoButton);
+            }
+
+            // Set up login form submission
+            if (loginForm) {
+                loginForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    const email = this.querySelector('input[type="email"]').value;
+                    const password = this.querySelector('input[type="password"]').value;
+                    handleLogin(email, password);
+                });
+            }
+
+            // Load user data if already logged in
+            const token = localStorage.getItem('token');
+            if (token) {
+                console.log('Found existing token, loading user data');
+                loadUserData();
+                // Hide any login modals if they exist
+                const loginModal = document.getElementById('loginModal');
+                if (loginModal) {
+                    loginModal.style.display = 'none';
+                }
+            } else {
+                console.log('No token found, redirecting to login page');
+                window.location.href = 'login.html';
+            }
+        });
+
+        function handleLogin(email, password) {
+            console.log('Attempting login for:', email);
+            
+            // Disable login button and show loading state
+            const submitBtn = document.querySelector('#loginForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Logging in...';
+            }
+            
+            // Set a timeout for server requests
+            const loginStatusEl = document.getElementById('loginStatus');
+            if (loginStatusEl) {
+                loginStatusEl.textContent = 'Connecting to server...';
+                loginStatusEl.style.display = 'block';
+            }
+            
+            fetch('http://localhost:8080/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Login error, status:', response.status);
+                    return response.json().then(data => {
+                        if (data.error === 'User not found') {
+                            throw new Error('User not found - account may not exist or database might be reset');
+                        } else {
+                            throw new Error(data.error || 'Login failed with status ' + response.status);
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Login successful:', data);
+                localStorage.setItem('token', data.token);
+                document.getElementById('loginModal').style.display = 'none';
+                if (loginStatusEl) loginStatusEl.style.display = 'none';
+                loadUserData();
+            })
+            .catch(error => {
+                console.error('Login error:', error);
+                if (loginStatusEl) {
+                    loginStatusEl.textContent = 'Error: ' + error.message;
+                    loginStatusEl.classList.add('error');
+                } else {
+                    alert('Login failed: ' + error.message);
+                }
+            })
+            .finally(() => {
+                // Re-enable login button
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Login';
+                }
+            });
+        }
+
+        function loginWithDemo() {
+            console.log('Using demo account');
+            const loginStatusEl = document.getElementById('loginStatus');
+            if (loginStatusEl) {
+                loginStatusEl.textContent = 'Using demo account (olivia@gmail.com)';
+                loginStatusEl.style.display = 'block';
+                loginStatusEl.className = 'login-status info';
+            }
+            
+            // Add small delay to show the status message
+            setTimeout(() => {
+                handleLogin('olivia@gmail.com', 'password123');
+            }, 300);
+        }
+    </script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="profile-section">
+                <div class="profile-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="profile-info">
+                    <h2 id="userName">Loading...</h2>
+                    <p id="userAge">-- years</p>
+                </div>
+                <div class="user-details">
+                    <p id="userId">Loading...</p>
+                </div>
+            </div>
+            <div class="cycle-status">
+                <h3>Current Cycle Status</h3>
+                <div class="status-box">
+                    <div id="cycleStatus">
+                        <p id="periodStatusText">Loading cycle status...</p>
+                    </div>
+                    <button id="addPeriodDateBtn" class="add-period-btn" onclick="openPeriodForm(); return false;">Period Date</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header>
+                <h1>Cycle Overview</h1>
+                <div class="header-actions">
+                    <button class="theme-toggle-btn" onclick="toggleSiteTheme()" id="themeToggleBtn" title="Toggle Light/Dark Mode">
+                        <i class="fas fa-moon dark-icon"></i>
+                        <i class="fas fa-sun light-icon"></i>
+                    </button>
+                    <button class="health-advice-btn" onclick="window.location.href='health-advice.html'">Health Advice</button>
+                    <button class="chatbot-btn" onclick="toggleChatbot()"><i class="fas fa-comment-dots"></i> Ask CycleBot</button>
+                    <button class="logout-btn" onclick="handleLogout()">Logout</button>
+                </div>
+            </header>
+
+            <div class="cycle-overview">
+                <div class="stat-card">
+                    <h3>Average Cycle</h3>
+                    <div class="stat-value">
+                        <span id="avgCycle">--</span>
+                        <span class="unit">days</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>Average Period</h3>
+                    <div class="stat-value">
+                        <span id="avgPeriod">--</span>
+                        <span class="unit">days</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <h3>Next Predicted</h3>
+                    <div class="stat-value">
+                        <span id="nextPredicted">--</span>
+                        <span class="unit">date</span>
+                    </div>
+                </div>
+            </div>
+
+            <section class="recent-cycles">
+                <h2>Recent Cycles</h2>
+                <div class="cycles-list" id="cyclesList">
+                    <!-- Cycles will be populated here -->
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome to CycleTrack</h2>
+            <form id="loginForm">
+                <input type="email" placeholder="Email" required>
+                <input type="password" placeholder="Password" required>
+                <div id="loginStatus" class="login-status"></div>
+                <button type="submit">Login</button>
+                <p>Don't have an account? <a href="#" onclick="showSignupModal()">Sign up</a></p>
+            </form>
+            <div class="demo-login-container">
+                <p>Having trouble? Use our demo account:</p>
+                <button type="button" class="demo-login-btn" onclick="loginWithDemo()">Demo Account</button>
+                <p class="demo-credentials">Email: olivia@gmail.com<br>Password: password123</p>
+            </div>
+            <div class="login-debug-info">
+                <p>If you're experiencing issues, please check:</p>
+                <ul>
+                    <li>The server is running at http://localhost:8080</li>
+                    <li>Your internet connection is active</li>
+                    <li>You're using the correct credentials</li>
+                    <li>Try restarting the server with <code>node server.js</code></li>
+                </ul>
+                <div class="troubleshooting-actions">
+                    <button id="resetDatabaseBtn" class="troubleshoot-btn" onclick="resetDatabase()">Recreate Demo User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Input Modal -->
+    <div id="periodInputModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Period Date</h2>
+            <form id="periodInputForm" onsubmit="return submitPeriodData(event);">
+                <div class="form-group">
+                    <label for="periodStartDate">Start Date:</label>
+                    <input type="date" id="periodStartDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="periodEndDate">End Date (leave blank if ongoing):</label>
+                    <input type="date" id="periodEndDate">
+                </div>
+                
+                <div class="custom-averages-section">
+                    <h3>Customize Averages</h3>
+                    <p class="form-hint">Override calculated averages with your own values</p>
+                    <div class="form-group">
+                        <label for="customCycleLength">Custom Avg. Cycle Length (days):</label>
+                        <input type="number" id="customCycleLength" min="20" max="45" placeholder="Optional">
+                    </div>
+                    <div class="form-group">
+                        <label for="customPeriodLength">Custom Avg. Period Duration (days):</label>
+                        <input type="number" id="customPeriodLength" min="1" max="10" placeholder="Optional">
+                    </div>
+                    <button type="button" id="clearCustomValues" class="clear-btn" onclick="clearCustomValues(); return false;">Reset to Calculated Values</button>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" id="closePeriodInput" onclick="document.getElementById('periodInputModal').style.display='none';">Cancel</button>
+                    <button type="submit" id="saveButton">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content history-modal">
+            <h2>Period History</h2>
+            <div id="historyList" class="history-list">
+                <!-- History will be populated here -->
+                <p class="loading-text">Loading history...</p>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="document.getElementById('historyModal').style.display='none';">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Interface -->
+    <div id="chatbot-container" class="chatbot-container">
+        <div class="chatbot-header">
+            <h3>CycleBot Assistant</h3>
+            <button class="close-btn" onclick="toggleChatbot()" title="Close chatbot">×</button>
+        </div>
+        <div class="chatbot-messages" id="chatbot-messages">
+            <div class="message bot-message">
+                <div class="message-content">
+                    Hello! I'm CycleBot, your period assistant. How can I help you today?
+                </div>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="user-input" placeholder="Ask about period symptoms, tips, or advice..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        <div class="chatbot-quick-questions">
+            <button onclick="quickQuestion('What should I eat during my period?')">Diet Tips</button>
+            <button onclick="quickQuestion('How can I reduce period cramps?')">Cramp Relief</button>
+            <button onclick="quickQuestion('What exercises are good during period?')">Exercise Tips</button>
+            <button onclick="quickQuestion('How to manage mood swings during period?')">Mood Tips</button>
+            <button onclick="quickQuestion('How to reduce bloating during period?')">Bloating</button>
+            <button onclick="quickQuestion('How to handle heavy flow?')">Heavy Flow</button>
+            <button onclick="quickQuestion('How to improve sleep during period?')">Sleep Tips</button>
+            <button onclick="quickQuestion('How to treat period headaches?')">Headaches</button>
+            <button onclick="quickQuestion('What supplements help with periods?')">Supplements</button>
+            <button onclick="quickQuestion('How to manage period skin issues?')">Skin Care</button>
+            <button onclick="quickQuestion('Calculate my next period');" class="highlight-btn">Calculate Period</button>
+            <button onclick="quickQuestion('Show my next 10 period dates');" class="highlight-btn">10 Future Periods</button>
+        </div>
+        <div class="chatbot-footer">
+            <button class="chatbot-close-btn" onclick="toggleChatbot()">Close Chat</button>
+            <div class="theme-switcher">
+                <span>Theme:</span>
+                <button onclick="switchTheme('pink')" class="theme-btn pink-theme" title="Pink Theme">🌸</button>
+                <button onclick="switchTheme('blue')" class="theme-btn blue-theme" title="Blue Theme">🌊</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Direct JavaScript for form handling -->
+    <script>
+    function submitPeriodData(event) {
+        event.preventDefault();
+        console.log('Direct form submission');
+        
+        // Get input values
+        const startDate = document.getElementById('periodStartDate').value;
+        const endDate = document.getElementById('periodEndDate').value || null;
+        
+        // Get custom average values if provided
+        const customCycleLength = document.getElementById('customCycleLength').value;
+        const customPeriodLength = document.getElementById('customPeriodLength').value;
+        
+        console.log('Form data:', { startDate, endDate, customCycleLength, customPeriodLength });
+        
+        // Get auth token
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You must be logged in to add period data');
+            return false;
+        }
+        
+        // IMPORTANT: Immediately update the UI with custom values if provided
+        if (customCycleLength && !isNaN(parseInt(customCycleLength))) {
+            const cycleValue = parseInt(customCycleLength);
+            document.getElementById('avgCycle').textContent = cycleValue;
+            document.getElementById('avgCycle').classList.add('highlight');
+            // Save to localStorage for persistence
+            localStorage.setItem('customCycleLength', cycleValue);
+            console.log('Updated average cycle length to:', cycleValue);
+        }
+        
+        if (customPeriodLength && !isNaN(parseInt(customPeriodLength))) {
+            const periodValue = parseInt(customPeriodLength);
+            document.getElementById('avgPeriod').textContent = periodValue;
+            document.getElementById('avgPeriod').classList.add('highlight');
+            // Save to localStorage for persistence
+            localStorage.setItem('customPeriodLength', periodValue);
+            console.log('Updated average period duration to:', periodValue);
+        }
+        
+        // If either value was cleared, remove from localStorage
+        if (customCycleLength === '' && localStorage.getItem('customCycleLength')) {
+            localStorage.removeItem('customCycleLength');
+            console.log('Removed custom cycle length from storage');
+        }
+        
+        if (customPeriodLength === '' && localStorage.getItem('customPeriodLength')) {
+            localStorage.removeItem('customPeriodLength');
+            console.log('Removed custom period length from storage');
+        }
+        
+        // Calculate next predicted date based on (possibly updated) values
+        if (customCycleLength || document.getElementById('avgCycle').textContent !== '--') {
+            const cycleLength = customCycleLength ? 
+                parseInt(customCycleLength) : 
+                parseInt(document.getElementById('avgCycle').textContent) || 28;
+            
+            const lastPeriodStart = new Date(startDate);
+            const nextPeriodDate = new Date(lastPeriodStart);
+            nextPeriodDate.setDate(lastPeriodStart.getDate() + cycleLength);
+            
+            document.getElementById('nextPredicted').textContent = nextPeriodDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            document.getElementById('nextPredicted').classList.add('highlight');
+            console.log('Updated next predicted date to:', nextPeriodDate);
+        }
+        
+        // Remove highlights after animation completes
+        setTimeout(() => {
+            document.getElementById('avgCycle').classList.remove('highlight');
+            document.getElementById('avgPeriod').classList.remove('highlight');
+            document.getElementById('nextPredicted').classList.remove('highlight');
+        }, 3000);
+        
+        // Disable the submit button
+        document.getElementById('saveButton').disabled = true;
+        document.getElementById('saveButton').textContent = 'Saving...';
+        
+        // Make the API call directly
+        fetch('http://localhost:8080/period', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate,
+                symptoms: { cramps: false, headache: false, bloating: false }
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to save period data');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Period data saved successfully:', data);
+            
+            // Hide the modal
+            document.getElementById('periodInputModal').style.display = 'none';
+            
+            // Alert success but with custom message about immediate updates
+            alert('Period data saved successfully! Your custom values have been preserved.');
+            
+            // Check if this is an active period (no end date)
+            if (!endDate) {
+                // Update the cycle status immediately for a better user experience
+                const startDateObj = new Date(startDate);
+                const today = new Date();
+                const dayCount = Math.floor((today - startDateObj) / (1000 * 60 * 60 * 24)) + 1;
+                
+                // Update the status to show active period
+                document.getElementById('cycleStatus').innerHTML = `
+                    <p class="active-period">Period Active</p>
+                    <p>Day ${dayCount} of current period</p>
+                `;
+                
+                // Highlight the status to show it was updated
+                document.getElementById('cycleStatus').classList.add('highlight');
+                setTimeout(() => {
+                    document.getElementById('cycleStatus').classList.remove('highlight');
+                }, 3000);
+            } else {
+                // If period has end date, just fetch the latest data for accurate status
+                fetch('http://localhost:8080/period', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => response.json())
+                .then(cycles => {
+                    // Get current custom values to preserve them
+                    const savedCustomCycleLength = localStorage.getItem('customCycleLength');
+                    const savedCustomPeriodLength = localStorage.getItem('customPeriodLength');
+                    
+                    // Update status without affecting custom values
+                    updateCycleStatus(cycles, savedCustomCycleLength);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error: ' + error.message);
+        })
+        .finally(() => {
+            // Re-enable the button
+            document.getElementById('saveButton').disabled = false;
+            document.getElementById('saveButton').textContent = 'Save';
+        });
+        
+        return false;
+    }
+
+    function openPeriodForm() {
+        console.log('Opening period form');
+        const modal = document.getElementById('periodInputModal');
+        
+        if (modal) {
+            // Set today's date first
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('periodStartDate').value = today;
+            document.getElementById('periodEndDate').value = '';
+            
+            // Pre-fill custom average fields with current values if they exist
+            const currentAvgCycle = document.getElementById('avgCycle').textContent;
+            const currentAvgPeriod = document.getElementById('avgPeriod').textContent;
+            
+            if (currentAvgCycle && currentAvgCycle !== '--') {
+                document.getElementById('customCycleLength').placeholder = `Current: ${currentAvgCycle}`;
+            } else {
+                document.getElementById('customCycleLength').placeholder = 'Optional (default: 28)';
+            }
+            
+            if (currentAvgPeriod && currentAvgPeriod !== '--') {
+                document.getElementById('customPeriodLength').placeholder = `Current: ${currentAvgPeriod}`;
+            } else {
+                document.getElementById('customPeriodLength').placeholder = 'Optional (default: 5)';
+            }
+            
+            // Clear any previous values
+            document.getElementById('customCycleLength').value = '';
+            document.getElementById('customPeriodLength').value = '';
+            
+            // Show the modal
+            modal.style.display = 'flex';
+            console.log('Modal displayed');
+            
+            // Force modal to front
+            modal.style.zIndex = '999999'; 
+        } else {
+            alert('ERROR: Period form not found!');
+        }
+        return false;
+    }
+
+    function loadUserData() {
+        console.log('====== loadUserData CALLED ======');
+        
+        // IMPORTANT: Save custom values before loading new data
+        // These will be restored after loading
+        const savedCustomCycleLength = localStorage.getItem('customCycleLength');
+        const savedCustomPeriodLength = localStorage.getItem('customPeriodLength');
+        
+        console.log('Custom values before loading data:', {
+            cycle: savedCustomCycleLength,
+            period: savedCustomPeriodLength
+        });
+        
+        // Get auth token
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('No token found, showing login modal');
+            document.getElementById('loginModal').style.display = 'flex';
+            return Promise.reject('Not logged in');
+        }
+        
+        // First try to display user data from localStorage for immediate feedback
+        const localName = localStorage.getItem('userName');
+        const localAge = localStorage.getItem('userAge');
+        const localId = localStorage.getItem('userId');
+        
+        if (localName || localId) {
+            console.log('Using cached user data from localStorage');
+            document.getElementById('userName').textContent = localName || 'Loading...';
+            document.getElementById('userAge').textContent = localAge ? `${localAge} years` : '-- years';
+            document.getElementById('userId').textContent = localId ? `User ID: ${localId}` : 'Loading...';
+        }
+        
+        // Then fetch user profile from server for latest data
+        return fetch('http://localhost:8080/profile', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.status === 401 || response.status === 403) {
+                // Unauthorized, token might be expired
+                localStorage.removeItem('token');
+                document.getElementById('loginModal').style.display = 'flex';
+                throw new Error('Authentication failed. Please log in again.');
+            }
+            if (!response.ok) {
+                throw new Error('Failed to load user profile');
+            }
+            return response.json();
+        })
+        .then(profile => {
+            console.log('Loaded user profile from server:', profile);
+            
+            // Update profile elements with fresh data
+            document.getElementById('userName').textContent = profile.name || 'Unknown User';
+            document.getElementById('userAge').textContent = profile.age ? `${profile.age} years` : '-- years';
+            document.getElementById('userId').textContent = `User ID: ${profile.id}`;
+            
+            // Also update localStorage with the latest data
+            localStorage.setItem('userName', profile.name || '');
+            localStorage.setItem('userAge', profile.age || '');
+            localStorage.setItem('userId', profile.id || '');
+            
+            // Now fetch period data
+            return fetch('http://localhost:8080/period', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to load cycle data');
+            }
+            return response.json();
+        })
+        .then(cycles => {
+            console.log('Loaded cycle data:', cycles);
+            
+            // IMPORTANT: If we have custom values, ensure the UI shows these first
+            if (savedCustomCycleLength) {
+                document.getElementById('avgCycle').textContent = savedCustomCycleLength;
+            }
+            
+            if (savedCustomPeriodLength) {
+                document.getElementById('avgPeriod').textContent = savedCustomPeriodLength;
+            }
+            
+            // Then update other UI elements without touching custom values
+            updateCycleStatus(cycles, savedCustomCycleLength);
+            
+            return cycles;
+        })
+        .catch(error => {
+            console.error('Error loading user data:', error);
+        });
+    }
+
+    function updateCycleStatus(cycles, customCycleLength) {
+        console.log('Updating cycle status with cycles:', cycles);
+        
+        const cycleStatus = document.getElementById('cycleStatus');
+        const cycleStatusText = document.getElementById('periodStatusText');
+        
+        // Check if we have cycles
+        if (!cycles || cycles.length === 0) {
+            console.log('No cycles found');
+            cycleStatusText.innerHTML = 'No cycle data available';
+            document.getElementById('nextPredicted').textContent = '--';
+            return;
+        }
+        
+        // Sort cycles by start_date (newest first)
+        const sortedCycles = [...cycles].sort((a, b) => 
+            new Date(b.start_date) - new Date(a.start_date));
+        
+        console.log('Sorted cycles:', sortedCycles);
+        
+        // Check if there's an active period
+        const activePeriod = sortedCycles.find(cycle => cycle.start_date && !cycle.end_date);
+        
+        // Display last 5 cycles
+        displayRecentCycles(sortedCycles.slice(0, 5));
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);  // Normalize to start of day
+        
+        // Get cycle length from custom value or calculate from UI
+        const cycleLength = customCycleLength || parseInt(document.getElementById('avgCycle').textContent) || 28;
+        console.log('Using cycle length:', cycleLength);
+        
+        if (activePeriod) {
+            // There's an active period
+            const startDate = new Date(activePeriod.start_date);
+            const daysSinceStart = Math.floor((today - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            console.log('Active period found, started on:', startDate);
+            console.log('Days since start:', daysSinceStart);
+            
+            cycleStatus.classList.add('active-period');
+            cycleStatusText.innerHTML = `<p>Day ${daysSinceStart} of current period</p>`;
+            
+            // Remove End Period button if it exists
+            const endBtn = document.getElementById('endPeriodBtn');
+            if (endBtn) {
+                endBtn.remove();
+            }
+            
+            // Still show prediction for next period
+            const nextPeriodDate = new Date(startDate);
+            nextPeriodDate.setDate(startDate.getDate() + cycleLength);
+            
+            document.getElementById('nextPredicted').textContent = nextPeriodDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        } else {
+            // No active period
+            cycleStatus.classList.remove('active-period');
+            
+            // Remove end period button if exists
+            const endBtn = document.getElementById('endPeriodBtn');
+            if (endBtn) {
+                endBtn.remove();
+            }
+            
+            // Find the most recent period to predict the next one
+            if (sortedCycles.length > 0) {
+                const lastPeriod = sortedCycles[0];
+                const lastStart = new Date(lastPeriod.start_date);
+                
+                console.log('Last period started on:', lastStart);
+                
+                // Calculate next expected period
+                const nextPeriodDate = new Date(lastStart);
+                nextPeriodDate.setDate(lastStart.getDate() + cycleLength);
+                
+                console.log('Next period expected on:', nextPeriodDate);
+                
+                // Calculate days until next period
+                const daysUntil = Math.floor((nextPeriodDate - today) / (1000 * 60 * 60 * 24));
+                
+                console.log('Days until next period:', daysUntil);
+                
+                // Update next predicted display
+                document.getElementById('nextPredicted').textContent = nextPeriodDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                
+                if (daysUntil > 0) {
+                    cycleStatusText.innerHTML = `<p>${daysUntil} days until next period</p>`;
+                } else if (daysUntil === 0) {
+                    cycleStatusText.innerHTML = `<p>Period expected today</p>`;
+                } else {
+                    cycleStatusText.innerHTML = 
+                        `<p>Period may be starting soon</p><p>${Math.abs(daysUntil)} days past prediction</p>`;
+                }
+            } else {
+                // No period history at all
+                cycleStatusText.innerHTML = `<p>No period history available</p>`;
+                document.getElementById('nextPredicted').textContent = '--';
+            }
+        }
+    }
+
+    function handleEndPeriod(periodId) {
+        console.log('Ending period:', periodId);
+        if (!confirm('Are you sure you want to end your current period?')) {
+            return;
+        }
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('You must be logged in to update period data');
+            return;
+        }
+        
+        // Save custom values before any updates
+        const savedCustomCycleLength = localStorage.getItem('customCycleLength');
+        const savedCustomPeriodLength = localStorage.getItem('customPeriodLength');
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        fetch(`http://localhost:8080/period/${periodId}`, {
+            method: 'PATCH',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                end_date: today
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to end period');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Period ended successfully:', data);
+            
+            // Show success message
+            alert('Period ended successfully!');
+            
+            // Update the UI without overwriting custom values
+            fetch('http://localhost:8080/period', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(cycles => {
+                console.log('Fetched updated cycles after ending period');
+                
+                // Ensure custom values are restored/preserved
+                if (savedCustomCycleLength) {
+                    document.getElementById('avgCycle').textContent = savedCustomCycleLength;
+                }
+                
+                if (savedCustomPeriodLength) {
+                    document.getElementById('avgPeriod').textContent = savedCustomPeriodLength;
+                }
+                
+                // Update cycle status with custom values
+                updateCycleStatus(cycles, savedCustomCycleLength);
+                
+                // Highlight the cycle status section to draw attention to the change
+                const cycleStatus = document.getElementById('cycleStatus');
+                if (cycleStatus) {
+                    cycleStatus.classList.add('highlight');
+                    setTimeout(() => {
+                        cycleStatus.classList.remove('highlight');
+                    }, 3000);
+                }
+            });
+        })
+        .catch(error => {
+            console.error('Error ending period:', error);
+            alert('Error: ' + error.message);
+        });
+    }
+
+    function clearCustomValues() {
+        // Clear input fields
+        document.getElementById('customCycleLength').value = '';
+        document.getElementById('customPeriodLength').value = '';
+        
+        // Remove from local storage
+        localStorage.removeItem('customCycleLength');
+        localStorage.removeItem('customPeriodLength');
+        
+        console.log('Custom values cleared');
+        
+        // Show a small confirmation
+        const clearBtn = document.getElementById('clearCustomValues');
+        const originalText = clearBtn.textContent;
+        clearBtn.textContent = 'Values Cleared!';
+        clearBtn.disabled = true;
+        
+        // Get the token for API access
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.log('No token found, cannot calculate default values');
+            return;
+        }
+        
+        // Fetch period data to calculate default values
+        fetch('http://localhost:8080/period', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch cycle data');
+            }
+            return response.json();
+        })
+        .then(cycles => {
+            if (!cycles || cycles.length === 0) {
+                console.log('No cycles found, using default values');
+                document.getElementById('avgCycle').textContent = '28';
+                document.getElementById('avgPeriod').textContent = '5';
+                return;
+            }
+            
+            // Sort cycles by start_date (newest first)
+            const sortedCycles = [...cycles].sort((a, b) => 
+                new Date(b.start_date) - new Date(a.start_date));
+            
+            // Calculate average cycle length
+            let totalCycleLength = 0;
+            let cycleCount = 0;
+            
+            for (let i = 0; i < sortedCycles.length - 1; i++) {
+                const currentStart = new Date(sortedCycles[i].start_date);
+                const nextStart = new Date(sortedCycles[i + 1].start_date);
+                const daysBetween = Math.round((currentStart - nextStart) / (1000 * 60 * 60 * 24));
+                
+                if (daysBetween > 0 && daysBetween < 90) {
+                    totalCycleLength += daysBetween;
+                    cycleCount++;
+                }
+            }
+            
+            const avgCycle = cycleCount > 0 ? Math.round(totalCycleLength / cycleCount) : 28;
+            console.log('Calculated average cycle length:', avgCycle);
+            
+            // Update average cycle length display
+            document.getElementById('avgCycle').textContent = avgCycle;
+            document.getElementById('avgCycle').classList.add('highlight');
+            
+            // Calculate average period duration
+            let totalPeriodDuration = 0;
+            let periodCount = 0;
+            
+            for (const cycle of sortedCycles) {
+                if (cycle.start_date && cycle.end_date) {
+                    const start = new Date(cycle.start_date);
+                    const end = new Date(cycle.end_date);
+                    const duration = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                    
+                    if (duration > 0 && duration < 15) {
+                        totalPeriodDuration += duration;
+                        periodCount++;
+                    }
+                }
+            }
+            
+            const avgPeriod = periodCount > 0 ? Math.round(totalPeriodDuration / periodCount) : 5;
+            console.log('Calculated average period duration:', avgPeriod);
+            
+            // Update average period duration display
+            document.getElementById('avgPeriod').textContent = avgPeriod;
+            document.getElementById('avgPeriod').classList.add('highlight');
+            
+            // Update cycle status with calculated values
+            updateCycleStatus(cycles, null); // Pass null to use calculated average
+            
+            // Highlight the updated values
+            document.getElementById('nextPredicted').classList.add('highlight');
+        })
+        .catch(error => {
+            console.error('Error calculating default values:', error);
+        })
+        .finally(() => {
+            // Reset button after a delay
+            setTimeout(() => {
+                clearBtn.textContent = originalText;
+                clearBtn.disabled = false;
+                
+                // Remove highlights
+                document.getElementById('avgCycle').classList.remove('highlight');
+                document.getElementById('avgPeriod').classList.remove('highlight');
+                document.getElementById('nextPredicted').classList.remove('highlight');
+            }, 3000);
+        });
+    }
+
+    function showHistoryModal() {
+        console.log('Opening history modal');
+        
+        // Show the modal first
+        const modal = document.getElementById('historyModal');
+        modal.style.display = 'flex';
+        
+        // Get the token for API access
+        const token = localStorage.getItem('token');
+        if (!token) {
+            document.getElementById('historyList').innerHTML = '<p class="error-text">You must be logged in to view history</p>';
+            return;
+        }
+        
+        // Show loading state
+        document.getElementById('historyList').innerHTML = '<p class="loading-text">Loading history...</p>';
+        
+        // Fetch period data
+        fetch('http://localhost:8080/period', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch cycle data');
+            }
+            return response.json();
+        })
+        .then(cycles => {
+            if (!cycles || cycles.length === 0) {
+                document.getElementById('historyList').innerHTML = '<p class="no-data">No period history found</p>';
+                return;
+            }
+            
+            // Sort cycles by start_date (newest first)
+            const sortedCycles = [...cycles].sort((a, b) => 
+                new Date(b.start_date) - new Date(a.start_date));
+            
+            // Take the last 10 (or fewer if less than 10 exist)
+            const lastTenCycles = sortedCycles.slice(0, 10);
+            
+            // Create the history list
+            const historyListElement = document.getElementById('historyList');
+            historyListElement.innerHTML = '';
+            
+            // Add header
+            const headerRow = document.createElement('div');
+            headerRow.className = 'history-header';
+            headerRow.innerHTML = `
+                <div class="history-col">Period Date Range</div>
+                <div class="history-col">Duration</div>
+            `;
+            historyListElement.appendChild(headerRow);
+            
+            // Add history items
+            lastTenCycles.forEach(cycle => {
+                const startDate = new Date(cycle.start_date);
+                const endDate = cycle.end_date ? new Date(cycle.end_date) : null;
+                
+                const duration = endDate ? 
+                    Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1 : 
+                    'Ongoing';
+                
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                const startFormatted = startDate.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                
+                const endFormatted = endDate ? 
+                    endDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                    }) : 
+                    'Present';
+                
+                historyItem.innerHTML = `
+                    <div class="history-col">${startFormatted} - ${endFormatted}</div>
+                    <div class="history-col">${duration} ${duration !== 'Ongoing' ? 'days' : ''}</div>
+                `;
+                
+                historyListElement.appendChild(historyItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading history:', error);
+            document.getElementById('historyList').innerHTML = `<p class="error-text">Error loading history: ${error.message}</p>`;
+        });
+    }
+
+    function handleLogout() {
+        // Clear token and redirect to home page
+        localStorage.removeItem('token');
+        window.location.href = 'index.html';
+    }
+
+    // Function to toggle between light and dark theme
+    function toggleSiteTheme() {
+        const body = document.body;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        
+        // Toggle theme
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        // Apply theme class to body
+        if (newTheme === 'light') {
+            body.classList.add('light-theme');
+        } else {
+            body.classList.remove('light-theme');
+        }
+        
+        // Save theme preference
+        localStorage.setItem('theme', newTheme);
+        console.log('Site theme switched to:', newTheme);
+    }
+
+    // Function to initialize site theme based on saved preference
+    function initializeSiteTheme() {
+        // Always set to light theme
+        document.body.classList.add('light-theme');
+        localStorage.setItem('theme', 'light');
+        console.log('Site theme set to light mode');
+    }
+
+    // Function to display recent cycles
+    function displayRecentCycles(recentCycles) {
+        const cyclesListElement = document.getElementById('cyclesList');
+        cyclesListElement.innerHTML = '';
+        
+        if (!recentCycles || recentCycles.length === 0) {
+            cyclesListElement.innerHTML = '<p class="no-data">No cycle data yet</p>';
+            return;
+        }
+        
+        recentCycles.forEach(cycle => {
+            const startDate = new Date(cycle.start_date);
+            const endDate = cycle.end_date ? new Date(cycle.end_date) : null;
+            
+            const duration = endDate ? 
+                Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1 : 
+                'Ongoing';
+            
+            const cycleItem = document.createElement('div');
+            cycleItem.className = 'cycle-item';
+            
+            cycleItem.innerHTML = `
+                <div class="cycle-date">
+                    <p class="start-date">${startDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}</p>
+                    <p class="end-date">${endDate ? endDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : 'Ongoing'}</p>
+                </div>
+                <div class="cycle-duration">
+                    <p>${duration} ${duration !== 'Ongoing' ? 'days' : ''}</p>
+                </div>
+            `;
+            
+            cyclesListElement.appendChild(cycleItem);
+        });
+    }
+
+    function resetDatabase() {
+        const loginStatusEl = document.getElementById('loginStatus');
+        if (loginStatusEl) {
+            loginStatusEl.textContent = 'Attempting to recreate demo user...';
+            loginStatusEl.style.display = 'block';
+            loginStatusEl.className = 'login-status info';
+        }
+        
+        fetch('http://localhost:8080/admin/reset-demo', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (loginStatusEl) {
+                    loginStatusEl.textContent = 'Demo user recreated! Try logging in again.';
+                    loginStatusEl.className = 'login-status success';
+                } else {
+                    alert('Demo user recreated! Try logging in again.');
+                }
+            } else {
+                throw new Error(data.error || 'Unknown error occurred');
+            }
+        })
+        .catch(error => {
+            console.error('Reset error:', error);
+            if (loginStatusEl) {
+                loginStatusEl.textContent = 'Error: ' + error.message;
+                loginStatusEl.className = 'login-status error';
+            } else {
+                alert('Error: ' + error.message);
+            }
+        });
+    }
+    </script>
+
+    <!-- Load external script but don't let it override our custom functionality -->
+    <script>
+    // Override any potential external functions that might reset our custom values
+    window.calculatePeriodDuration = function() {
+        console.log("External calculatePeriodDuration called - using our custom implementation instead");
+        return;
+    };
+    </script>
+    <script src="script.js"></script>
+
+    <!-- Chatbot functionality -->
+    <script>
+    // Initialize theme when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeTheme();
+    });
+    
+    function toggleChatbot() {
+        const chatbot = document.getElementById('chatbot-container');
+        if (chatbot.classList.contains('open')) {
+            chatbot.classList.remove('open');
+        } else {
+            chatbot.classList.add('open');
+        }
+    }
+    
+    // Set initial theme based on stored preference
+    function initializeTheme() {
+        const theme = localStorage.getItem('chatTheme') || 'pink';
+        switchTheme(theme);
+    }
+    
+    // Function to switch between themes
+    function switchTheme(theme) {
+        const body = document.body;
+        const pinkBtn = document.querySelector('.pink-theme');
+        const blueBtn = document.querySelector('.blue-theme');
+        
+        // Remove all theme classes
+        body.classList.remove('blue-theme');
+        
+        // Remove active status from all buttons
+        pinkBtn.classList.remove('active');
+        blueBtn.classList.remove('active');
+        
+        // Set active theme
+        if (theme === 'blue') {
+            body.classList.add('blue-theme');
+            blueBtn.classList.add('active');
+        } else {
+            // Pink is default
+            pinkBtn.classList.add('active');
+        }
+        
+        // Save preference
+        localStorage.setItem('chatTheme', theme);
+        
+        console.log('Theme switched to:', theme);
+    }
+
+    function sendMessage() {
+        const userInput = document.getElementById('user-input');
+        const message = userInput.value.trim();
+        
+        if (message === '') return;
+        
+        // Add user message to chat
+        addMessage(message, 'user');
+        userInput.value = '';
+        
+        // Show typing indicator
+        showTypingIndicator();
+        
+        // Process the message and get a response
+        setTimeout(() => {
+            const response = getChatbotResponse(message);
+            removeTypingIndicator();
+            addMessage(response, 'bot');
+        }, 1000);
+    }
+
+    function addMessage(message, sender) {
+        const chatMessages = document.getElementById('chatbot-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message`;
+        
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+        messageContent.textContent = message;
+        
+        messageDiv.appendChild(messageContent);
+        chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const chatMessages = document.getElementById('chatbot-messages');
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot-message typing-indicator';
+        typingDiv.id = 'typing-indicator';
+        
+        const typingContent = document.createElement('div');
+        typingContent.className = 'message-content';
+        typingContent.innerHTML = '<span>.</span><span>.</span><span>.</span>';
+        
+        typingDiv.appendChild(typingContent);
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const typingIndicator = document.getElementById('typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+    }
+
+    function quickQuestion(question) {
+        document.getElementById('user-input').value = question;
+        sendMessage();
+    }
+
+    function getChatbotResponse(message) {
+        // Convert message to lowercase for easier matching
+        const lowerMessage = message.toLowerCase();
+        
+        // List of menstruation-related keywords to check if question is on topic
+        const menstruationKeywords = [
+            'period', 'menstrual', 'menstruation', 'cycle', 'flow', 'cramp', 'pain',
+            'bloating', 'pms', 'symptom', 'bleed', 'tampon', 'pad', 'cup', 'ovulat',
+            'hormone', 'mood', 'tired', 'fatig', 'headache', 'migraine', 'acne', 'breast',
+            'tender', 'eat', 'food', 'diet', 'exercise', 'sleep', 'insomnia', 'heavy',
+            'spotting', 'irregular', 'track', 'calendar', 'predict', 'duration', 'length',
+            'backache', 'nausea', 'pcos', 'endometriosis', 'contraceptive', 'birth control',
+            'fertile', 'fertility', 'pregnancy', 'pregnant', 'leak', 'stain', 'iron',
+            'anemia', 'stress', 'anxiety', 'pill'
+        ];
+        
+        // Check for app-related questions (these are okay to answer)
+        if (lowerMessage.includes('app') || 
+            lowerMessage.includes('track') || 
+            lowerMessage.includes('predict') || 
+            lowerMessage.includes('calendar') || 
+            lowerMessage.includes('record') ||
+            lowerMessage.includes('log') ||
+            lowerMessage.includes('data') ||
+            lowerMessage.includes('feature') ||
+            lowerMessage.includes('cycletrack')) {
+            return "This CycleTrack app helps you track your menstrual cycle, predict future periods, and manage your reproductive health. You can log period dates, symptoms, and view predictions for upcoming cycles. For specific app questions, the main menu has options for logging data, viewing history, and checking predictions. I'm here to provide health advice related to menstruation - feel free to ask about symptoms, nutrition, exercise, or other period-related topics!";
+        }
+
+        // Check for basic greeting/intro questions
+        if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+            return "Hi there! I'm CycleBot, your period assistant. Feel free to ask me about period-related topics like managing symptoms, diet tips, exercise recommendations, or any specific concerns you might have during your cycle!";
+        }
+        
+        if (lowerMessage.includes('thank')) {
+            return "You're welcome! I'm here anytime you need information or support during your cycle. Is there anything else I can help you with today?";
+        }
+        
+        if (lowerMessage.includes('how are you') || lowerMessage.includes('how r u')) {
+            return "I'm functioning well and ready to help with your period-related questions! How can I assist you with your menstrual health today?";
+        }
+        
+        if (lowerMessage.includes('who are you') || lowerMessage.includes('what are you')) {
+            return "I'm CycleBot, a specialized assistant designed to provide helpful information about menstruation, period symptoms, and reproductive health. I can answer questions about managing period pain, recommending foods and exercises during your cycle, and other menstruation-related topics!";
+        }
+        
+        // Check if message contains any menstruation-related keywords
+        const isRelevant = menstruationKeywords.some(keyword => lowerMessage.includes(keyword));
+        
+        // If the message is not relevant to menstruation, prompt user to ask related questions
+        if (!isRelevant && message.length > 5) {
+            return "I'm specifically designed to answer questions about menstruation and period health. I don't have information about topics outside of women's reproductive health. Please ask me something related to periods, menstrual cycles, symptoms, or women's health.\n\nHere are some examples of questions I can help with:\n• How to reduce period cramps?\n• What foods should I eat during my period?\n• Why is my period irregular?\n• How can I manage mood swings during PMS?";
+        }
+        
+        // Check for keywords and provide appropriate responses
+        if (lowerMessage.includes('cramp') || lowerMessage.includes('pain')) {
+            return "For menstrual cramps and pain relief:\n" +
+                   "• Use a heating pad or hot water bottle on your lower abdomen\n" +
+                   "• Take over-the-counter pain relievers like ibuprofen or naproxen\n" +
+                   "• Try gentle yoga poses (child's pose, cat-cow, seated forward bend)\n" +
+                   "• Apply gentle massage to your lower back and abdomen\n" +
+                   "• Stay hydrated and avoid caffeine and alcohol\n" +
+                   "• Consider supplements like magnesium, vitamin B1, or omega-3s\n" +
+                   "• Try acupressure on the inside of your ankle, 3 finger-widths above the ankle bone\n" +
+                   "• Use relaxation techniques like deep breathing or meditation\n" +
+                   "• Wear comfortable, loose-fitting clothing\n" +
+                   "• If cramps are severe or debilitating, consult your healthcare provider";
+        } 
+        else if (lowerMessage.includes('eat') || lowerMessage.includes('food') || lowerMessage.includes('diet')) {
+            return "Nutrition tips during your period:\n" +
+                   "• Iron-rich foods: leafy greens, lean red meat, lentils, beans to replenish iron loss\n" +
+                   "• Foods high in omega-3s: salmon, walnuts, flaxseeds to reduce inflammation\n" +
+                   "• Complex carbohydrates: brown rice, quinoa, sweet potatoes for sustained energy\n" +
+                   "• Water-rich fruits and vegetables: cucumber, watermelon, celery to combat bloating\n" +
+                   "• Calcium-rich foods: yogurt, kale, fortified plant milks to reduce mood symptoms\n" +
+                   "• Magnesium-rich foods: dark chocolate, avocados, nuts to help with cramps\n" +
+                   "• Anti-inflammatory spices: turmeric, ginger, cinnamon to reduce pain\n" +
+                   "• Small, frequent meals rather than large ones to manage energy levels\n" +
+                   "• Limit or avoid: salt, sugar, alcohol, caffeine, processed foods\n" +
+                   "• Consider herbal teas like chamomile, peppermint, or ginger for symptom relief";
+        }
+        else if (lowerMessage.includes('exercise') || lowerMessage.includes('workout') || lowerMessage.includes('activity')) {
+            return "Exercise recommendations during your period:\n" +
+                   "• Low-impact cardio: walking, cycling, or swimming (30 minutes daily if possible)\n" +
+                   "• Yoga: try 'moon salutations' or specific poses for period relief\n" +
+                   "• Pilates: strengthens core muscles which can help with back pain\n" +
+                   "• Light strength training: using lower weights than usual\n" +
+                   "• Stretching: hamstring and hip opener stretches to relieve tension\n" +
+                   "• Dancing: gentle movement can boost endorphins and mood\n" +
+                   "• Tai Chi: helps with stress reduction and improves circulation\n" +
+                   "• Modify intensity: reduce workout intensity by 20-30% during heavy days\n" +
+                   "• Time workouts wisely: exercise when your energy is highest\n" +
+                   "• Listen to your body: some discomfort is normal, but stop if pain increases";
+        }
+        else if (lowerMessage.includes('mood') || lowerMessage.includes('emotional') || lowerMessage.includes('irritable') || lowerMessage.includes('anxiety') || lowerMessage.includes('depression')) {
+            return "For managing mood changes and emotional symptoms:\n" +
+                   "• Practice mindfulness meditation for 10 minutes daily\n" +
+                   "• Use journaling to track emotions and identify patterns\n" +
+                   "• Try mood-boosting activities like spending time in nature\n" +
+                   "• Get adequate sleep (7-9 hours) and maintain a regular sleep schedule\n" +
+                   "• Connect with supportive friends or family members\n" +
+                   "• Consider therapy approaches like CBT for recurring severe symptoms\n" +
+                   "• Use breathing exercises (4-7-8 technique) when feeling overwhelmed\n" +
+                   "• Set boundaries and reduce commitments during difficult days\n" +
+                   "• Create a self-care toolkit with items like essential oils, music, or comfort objects\n" +
+                   "• If symptoms severely impact your life, consult a healthcare provider";
+        }
+        else if (lowerMessage.includes('sleep') || lowerMessage.includes('insomnia') || lowerMessage.includes('tired') || lowerMessage.includes('fatigue')) {
+            return "For better sleep during your period:\n" +
+                   "• Maintain a consistent sleep schedule even on weekends\n" +
+                   "• Create a cool, dark, and quiet sleeping environment\n" +
+                   "• Use a heating pad for 15-20 minutes before bed to relieve cramps\n" +
+                   "• Avoid screens at least 1 hour before bedtime (blue light disrupts melatonin)\n" +
+                   "• Try relaxation techniques like progressive muscle relaxation\n" +
+                   "• Use period underwear or a menstrual cup to prevent leaks and worry\n" +
+                   "• Avoid large meals, caffeine, and alcohol close to bedtime\n" +
+                   "• Consider a magnesium supplement in the evening (check with doctor first)\n" +
+                   "• Use breathable cotton sheets and pajamas to manage night sweats\n" +
+                   "• Try sleep-promoting herbs like valerian root or chamomile tea";
+        }
+        else if (lowerMessage.includes('bloating') || lowerMessage.includes('water retention') || lowerMessage.includes('swelling')) {
+            return "To reduce bloating and water retention:\n" +
+                   "• Eat smaller meals more frequently throughout the day\n" +
+                   "• Significantly reduce salt intake the week before and during your period\n" +
+                   "• Drink more water to help flush excess sodium (aim for 2-3 liters daily)\n" +
+                   "• Consume natural diuretics like cucumber, watermelon, lemon water\n" +
+                   "• Add potassium-rich foods like bananas, sweet potatoes, and avocados\n" +
+                   "• Avoid carbonated drinks, chewing gum, and using straws (reduces swallowed air)\n" +
+                   "• Try gentle abdominal massage in a clockwise direction\n" +
+                   "• Wear comfortable, non-restrictive clothing\n" +
+                   "• Exercise regularly to improve circulation and reduce fluid retention\n" +
+                   "• Consider dandelion tea which has natural diuretic properties";
+        }
+        else if (lowerMessage.includes('headache') || lowerMessage.includes('migraine')) {
+            return "For menstrual headaches and migraines:\n" +
+                   "• Apply cold or warm compresses to your forehead or neck (try both to see what helps)\n" +
+                   "• Stay well hydrated - dehydration can trigger or worsen headaches\n" +
+                   "• Practice stress reduction through meditation or deep breathing\n" +
+                   "• Rest in a dark, quiet room and consider wearing an eye mask\n" +
+                   "• Try acupressure by pressing the web between thumb and index finger\n" +
+                   "• Maintain regular meals as blood sugar drops can trigger headaches\n" +
+                   "• Consider magnesium supplements which may help prevent menstrual migraines\n" +
+                   "• Use appropriate pain relievers at the first sign of a headache\n" +
+                   "• Track triggers in a journal to identify patterns\n" +
+                   "• For recurring severe migraines, consult with a doctor about preventive options";
+        }
+        else if (lowerMessage.includes('skin') || lowerMessage.includes('acne') || lowerMessage.includes('breakout')) {
+            return "For managing period-related skin issues:\n" +
+                   "• Cleanse skin gently twice daily - avoid harsh scrubbing\n" +
+                   "• Use non-comedogenic moisturizers that won't clog pores\n" +
+                   "• Consider products with salicylic acid or benzoyl peroxide for breakouts\n" +
+                   "• Avoid touching your face throughout the day\n" +
+                   "• Change pillowcases frequently during breakout periods\n" +
+                   "• Stay hydrated to help flush toxins from the skin\n" +
+                   "• Focus on anti-inflammatory foods like fatty fish and berries\n" +
+                   "• Reduce dairy and high-glycemic foods which may worsen acne\n" +
+                   "• Manage stress through meditation or yoga to reduce cortisol\n" +
+                   "• Be patient - hormonal breakouts typically resolve after your period";
+        }
+        else if (lowerMessage.includes('heavy') || lowerMessage.includes('flow') || lowerMessage.includes('bleeding')) {
+            return "For managing heavy menstrual flow:\n" +
+                   "• Change pads/tampons every 3-4 hours or more frequently if needed\n" +
+                   "• Consider using menstrual products designed for heavy flow\n" +
+                   "• Try a menstrual cup or period underwear for better protection\n" +
+                   "• Supplement with iron-rich foods to prevent anemia\n" +
+                   "• Stay hydrated to replace fluid loss\n" +
+                   "• Plan bathroom breaks more frequently during heavy days\n" +
+                   "• Wear dark-colored clothing on heaviest days\n" +
+                   "• Have backup supplies readily available at work/school\n" +
+                   "• Track your flow heaviness to share information with healthcare providers\n" +
+                   "• Consult a doctor if your flow soaks through protection hourly for 2+ hours";
+        }
+        else if (lowerMessage.includes('nausea') || lowerMessage.includes('vomit') || lowerMessage.includes('stomach')) {
+            return "For managing period-related nausea and digestive issues:\n" +
+                   "• Try ginger tea, candies, or supplements to calm the stomach\n" +
+                   "• Eat smaller, more frequent meals instead of large ones\n" +
+                   "• Stay hydrated with small sips of water or electrolyte drinks\n" +
+                   "• Avoid spicy, greasy, or heavy foods that can irritate the stomach\n" +
+                   "• Try peppermint tea which can soothe digestive discomfort\n" +
+                   "• Wear loose clothing that doesn't put pressure on your abdomen\n" +
+                   "• Rest in a semi-upright position after eating\n" +
+                   "• Try acupressure wristbands designed for motion sickness\n" +
+                   "• Practice deep breathing when feeling nauseous\n" +
+                   "• If nausea is severe or includes vomiting, consult a healthcare provider";
+        }
+        else if (lowerMessage.includes('breast') || lowerMessage.includes('tender') || lowerMessage.includes('sore')) {
+            return "For managing breast tenderness or soreness:\n" +
+                   "• Wear a supportive, well-fitted bra (consider sleeping in a soft sports bra)\n" +
+                   "• Apply warm or cold compresses to sore areas\n" +
+                   "• Take an anti-inflammatory medication like ibuprofen\n" +
+                   "• Reduce salt intake to minimize fluid retention\n" +
+                   "• Consider reducing caffeine which can worsen symptoms\n" +
+                   "• Try evening primrose oil supplements (consult doctor first)\n" +
+                   "• Perform gentle massage with essential oils like lavender\n" +
+                   "• Avoid sleeping on your stomach during this time\n" +
+                   "• Track when tenderness occurs to identify patterns\n" +
+                   "• If pain is severe or accompanied by lumps, consult a doctor";
+        }
+        else if (lowerMessage.includes('backache') || lowerMessage.includes('back pain') || lowerMessage.includes('back ache')) {
+            return "For managing period-related back pain:\n" +
+                   "• Apply a heating pad to the lower back for 15-20 minutes\n" +
+                   "• Try gentle stretches like child's pose or cat-cow\n" +
+                   "• Practice good posture throughout the day\n" +
+                   "• Consider a warm bath with Epsom salts\n" +
+                   "• Use over-the-counter pain relievers when needed\n" +
+                   "• Try massage with essential oils like lavender or peppermint\n" +
+                   "• Strengthen core muscles between periods to provide better support\n" +
+                   "• Avoid high heels which can worsen back pain\n" +
+                   "• Use a pillow between knees when sleeping on your side\n" +
+                   "• If back pain is severe or radiating, consult a healthcare provider";
+        }
+        else if (lowerMessage.includes('do') && lowerMessage.includes('not') || lowerMessage.includes("don't") || lowerMessage.includes("avoid")) {
+            return "During your period, try to avoid:\n" +
+                   "• High sodium foods that increase bloating and water retention\n" +
+                   "• Excessive caffeine which can worsen anxiety and breast tenderness\n" +
+                   "• Alcohol which may intensify mood swings and dehydration\n" +
+                   "• Skipping meals which can lead to low blood sugar and fatigue\n" +
+                   "• Intense, high-impact exercise if uncomfortable or in severe pain\n" +
+                   "• Tight, restrictive clothing that puts pressure on your abdomen\n" +
+                   "• Making important emotional decisions if experiencing mood changes\n" +
+                   "• Using scented menstrual products which can cause irritation\n" +
+                   "• Taking medications that thin blood (aspirin) if flow is already heavy\n" +
+                   "• Smoking which can worsen period pain and blood flow";
+        }
+        else if (lowerMessage.includes('supplement') || lowerMessage.includes('vitamin') || lowerMessage.includes('mineral')) {
+            return "Supplements that may help with period symptoms:\n" +
+                   "• Magnesium: May reduce cramps and improve mood (200-400mg daily)\n" +
+                   "• Vitamin B6: Can help with mood changes and bloating (50-100mg daily)\n" +
+                   "• Iron: Important if you have heavy periods to prevent anemia\n" +
+                   "• Calcium: May reduce mood symptoms and cramps (1000mg daily)\n" +
+                   "• Omega-3 fatty acids: Can reduce inflammation and pain\n" +
+                   "• Vitamin D: May help with mood and cramps (2000 IU daily)\n" +
+                   "• Evening primrose oil: Can reduce breast tenderness\n" +
+                   "• Ginger: Helps with nausea and may reduce pain\n" +
+                   "• Vitamin E: May reduce breast tenderness and cramps\n" +
+                   "• Always consult with a healthcare provider before starting supplements";
+        }
+        else if (lowerMessage.includes('calculate') || lowerMessage.includes('predict') || 
+                 lowerMessage.includes('next period') || lowerMessage.includes('when will') ||
+                 lowerMessage.includes('coming') || lowerMessage.includes('due date') ||
+                 (lowerMessage.includes('cycle') && lowerMessage.includes('length')) ||
+                 (lowerMessage.includes('next') && lowerMessage.includes('period'))) {
+            
+            // Check if the message contains a date
+            const datePattern = /\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}|\d{1,2}(st|nd|rd|th)? (of )?(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december)/i;
+            const dateMatch = lowerMessage.match(datePattern);
+            
+            let lastPeriodDate;
+            let cycleLength = 28; // Default cycle length
+            
+            // Try to extract cycle length if mentioned
+            const cycleLengthPattern = /(\d{2})\s*(?:day|days|d)/i;
+            const cycleLengthMatch = lowerMessage.match(cycleLengthPattern);
+            if (cycleLengthMatch && cycleLengthMatch[1]) {
+                const extractedLength = parseInt(cycleLengthMatch[1]);
+                if (extractedLength >= 21 && extractedLength <= 45) {
+                    cycleLength = extractedLength;
+                }
+            }
+            
+            // Try to parse the last period date from the message
+            if (dateMatch) {
+                try {
+                    const dateStr = dateMatch[0];
+                    // Handle various date formats
+                    lastPeriodDate = new Date(dateStr);
+                    
+                    // If the date is invalid, fall back to today's date
+                    if (isNaN(lastPeriodDate.getTime())) {
+                        lastPeriodDate = new Date();
+                    }
+                } catch (e) {
+                    lastPeriodDate = new Date();
+                }
+            } else {
+                lastPeriodDate = new Date();
+            }
+            
+            // Calculate next period date
+            const nextPeriodDate = new Date(lastPeriodDate);
+            nextPeriodDate.setDate(lastPeriodDate.getDate() + cycleLength);
+            
+            // Calculate days until next period
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const daysUntil = Math.floor((nextPeriodDate - today) / (1000 * 60 * 60 * 24));
+            
+            // Format dates nicely
+            const lastPeriodFormatted = lastPeriodDate.toLocaleDateString('en-US', {
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            const nextPeriodFormatted = nextPeriodDate.toLocaleDateString('en-US', {
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            // Prepare response
+            let response = "📅 Period Calculator Results:\n\n";
+            
+            if (dateMatch) {
+                response += `Based on your last period starting on ${lastPeriodFormatted} with an average cycle length of ${cycleLength} days:\n\n`;
+            } else {
+                response += `Based on today's date (${lastPeriodFormatted}) with an average cycle length of ${cycleLength} days:\n\n`;
+            }
+            
+            response += `Your next period is expected on: ${nextPeriodFormatted}\n\n`;
+            
+            if (daysUntil > 0) {
+                response += `That's in ${daysUntil} days from today.\n\n`;
+            } else if (daysUntil === 0) {
+                response += `That's today!\n\n`;
+            } else {
+                response += `Your period might be ${Math.abs(daysUntil)} days late.\n\n`;
+            }
+            
+            // Check if user wants multiple future dates
+            if (lowerMessage.includes('upcoming') || lowerMessage.includes('future') || 
+                lowerMessage.includes('next 10') || lowerMessage.includes('multiple') || 
+                lowerMessage.includes('all') || lowerMessage.includes('calendar') ||
+                lowerMessage.includes('10') || lowerMessage.includes('dates') || 
+                lowerMessage.includes('schedule')) {
+                
+                response += "🗓️ Upcoming Period Schedule (Next 10 Periods):\n\n";
+                
+                // Calculate and display next 10 period dates
+                const upcomingDates = [];
+                let currentDate = new Date(nextPeriodDate);
+                
+                // If the first date is in the past, start from today
+                if (currentDate < today) {
+                    currentDate = new Date(today);
+                }
+                
+                for (let i = 0; i < 10; i++) {
+                    if (i > 0) {
+                        // For dates after the first one, add cycle length to the previous date
+                        currentDate = new Date(currentDate);
+                        currentDate.setDate(currentDate.getDate() + cycleLength);
+                    }
+                    
+                    const formattedDate = currentDate.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    
+                    upcomingDates.push(`${i+1}. ${formattedDate}`);
+                }
+                
+                response += upcomingDates.join('\n');
+                response += '\n\n';
+            }
+            
+            response += "Keep in mind this is an estimate. For more accurate predictions, track your period dates in the app's main calendar.";
+            
+            return response;
+        }
+    }
+    </script>
+</body>
+</html>
